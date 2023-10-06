@@ -36,6 +36,30 @@ void FreeBackground()
 	}
 }
 
+void DrawImage(HANDLE& hBmp, BITMAP& bitmap, POINT& bitmapCoordinates)
+{
+	// Save dc to place image 
+	SaveDC(hdcBack);
+	FillRect(hdcBack, &clientFrame, (HBRUSH)(COLOR_WINDOW + 1));
+	RECT image_rect;
+	SetRect(&image_rect, bitmapCoordinates.x, bitmapCoordinates.y, bitmapCoordinates.x + bitmap.bmWidth, bitmapCoordinates.y + bitmap.bmHeight);
+	Rectangle(hdcBack, bitmapCoordinates.x, bitmapCoordinates.y, bitmapCoordinates.x + bitmap.bmWidth, bitmapCoordinates.y + bitmap.bmHeight);//
+	HBRUSH hBrush = CreateSolidBrush(RGB(0, 255, 255));
+	FillRect(hdcBack, &image_rect, hBrush);
+	HDC hMemDC = CreateCompatibleDC(hdcBack);
+	HBITMAP hOldBmp = (HBITMAP)SelectObject(hMemDC, hBmp);
+	if (hOldBmp)
+	{
+		SetMapMode(hMemDC, GetMapMode(hdcBack));
+		TransparentBlt(hdcBack, bitmapCoordinates.x, bitmapCoordinates.y, BITMAP_SIZE, BITMAP_SIZE, hMemDC, 0, 0, bitmap.bmWidth, bitmap.bmHeight, RGB(0, 0, 0));
+		SelectObject(hMemDC, hOldBmp);
+	}
+	DeleteDC(hMemDC);
+
+	// Replace context with image
+	RestoreDC(hdcBack, -1);
+}
+
 int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLine, int nCmdShow)
 {
 	WNDCLASSEX wcex;
@@ -87,10 +111,27 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 
 	switch (uMsg)
 	{
+	case WM_CREATE:
+	{
+		handleBitmap = LoadImage(NULL, L"picture.bmp", IMAGE_BITMAP, BITMAP_SIZE, BITMAP_SIZE, LR_LOADFROMFILE | LR_LOADTRANSPARENT);
+		GetObject(handleBitmap, sizeof(image), &image);
+
+		imageCoorg = { 100, 100 };
+		break;
+	}
 	case WM_DESTROY:
 	{
 		FreeBackground();
 		PostQuitMessage(0);
+		break;
+	}
+	case WM_PAINT:
+	{
+		DrawImage(handleBitmap, image, imageCoorg);
+
+		hdc = BeginPaint(hWnd, &paintStruct);
+		BitBlt(hdc, 0, 0, clientFrame.right - clientFrame.left, clientFrame.bottom - clientFrame.top, hdcBack, 0, 0, SRCCOPY);
+		EndPaint(hWnd, &paintStruct);
 		break;
 	}
 	case WM_SIZE:
