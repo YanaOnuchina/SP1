@@ -41,18 +41,18 @@ void DrawImage(HANDLE& hBmp, BITMAP& bitmap, POINT& bitmapCoordinates)
 	// Save dc to place image 
 	SaveDC(hdcBack);
 	FillRect(hdcBack, &clientFrame, (HBRUSH)(COLOR_WINDOW + 1));
-	RECT image_rect;
-	SetRect(&image_rect, bitmapCoordinates.x, bitmapCoordinates.y, bitmapCoordinates.x + bitmap.bmWidth, bitmapCoordinates.y + bitmap.bmHeight);
+	RECT imageRect;
+	SetRect(&imageRect, bitmapCoordinates.x, bitmapCoordinates.y, bitmapCoordinates.x + bitmap.bmWidth, bitmapCoordinates.y + bitmap.bmHeight);
 	Rectangle(hdcBack, bitmapCoordinates.x, bitmapCoordinates.y, bitmapCoordinates.x + bitmap.bmWidth, bitmapCoordinates.y + bitmap.bmHeight);//
 	HBRUSH hBrush = CreateSolidBrush(RGB(0, 255, 255));
-	FillRect(hdcBack, &image_rect, hBrush);
+	FillRect(hdcBack, &imageRect, hBrush);
 	HDC hMemDC = CreateCompatibleDC(hdcBack);
-	HBITMAP hOldBmp = (HBITMAP)SelectObject(hMemDC, hBmp);
-	if (hOldBmp)
+	HBITMAP hOldBitmap = (HBITMAP)SelectObject(hMemDC, hBmp);
+	if (hOldBitmap)
 	{
 		SetMapMode(hMemDC, GetMapMode(hdcBack));
 		TransparentBlt(hdcBack, bitmapCoordinates.x, bitmapCoordinates.y, BITMAP_SIZE, BITMAP_SIZE, hMemDC, 0, 0, bitmap.bmWidth, bitmap.bmHeight, RGB(0, 0, 0));
-		SelectObject(hMemDC, hOldBmp);
+		SelectObject(hMemDC, hOldBitmap);
 	}
 	DeleteDC(hMemDC);
 
@@ -65,7 +65,6 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLin
 	WNDCLASSEX wcex;
 	HWND hWnd;
 	MSG msg;
-
 	wcex.cbSize = sizeof(WNDCLASSEX);
 	wcex.style = CS_VREDRAW | CS_HREDRAW;
 	wcex.lpfnWndProc = WndProc;
@@ -157,6 +156,13 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 	{
 		MoveImage(wParam);
 		InvalidateRect(hWnd, NULL, FALSE);
+		break;
+	}
+	case WM_GETMINMAXINFO:
+	{
+		MINMAXINFO* pInfo = (MINMAXINFO*)lParam;
+		POINT min = { imageCoorg.x + BITMAP_SIZE + 17, imageCoorg.y + BITMAP_SIZE + 40};
+		pInfo->ptMinTrackSize = min;
 		break;
 	}
 	}
