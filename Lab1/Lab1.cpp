@@ -72,12 +72,12 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLin
 	wcex.cbClsExtra = 0;
 	wcex.cbWndExtra = 0;
 	wcex.hInstance = hInstance;
-	wcex.hIcon = LoadIcon(hInstance, MAKEINTRESOURCE(IDI_LAB1));
+	wcex.hIcon = LoadIcon(hInstance, NULL);
 	wcex.hCursor = LoadCursorW(NULL, IDC_ARROW);
 	wcex.hbrBackground = (HBRUSH)(COLOR_WINDOW + 1);
 	wcex.lpszMenuName = NULL;
 	wcex.lpszClassName = L"FirstLab";
-	wcex.hIconSm = LoadIcon(wcex.hInstance, MAKEINTRESOURCE(IDI_SMALL));
+	wcex.hIconSm = LoadIcon(wcex.hInstance, NULL);
 
 	if (!RegisterClassEx(&wcex))
 	{
@@ -98,6 +98,17 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR pCmdLin
 	return msg.wParam;
 }
 
+void MoveImage(WPARAM wParam) {
+	int direction = GET_WHEEL_DELTA_WPARAM(wParam);
+	if (LOWORD(wParam) & MK_SHIFT)
+	{
+		(imageCoorg.x - (direction / 25) >= clientRect.left) && (imageCoorg.x - (direction / 25) <= clientRect.right - BITMAP_SIZE) ? imageCoorg.x -= (direction / 25) : imageCoorg.x += (direction / 25);
+	}
+	else
+	{
+		(imageCoorg.y + (direction / 25) >= clientRect.top) && (imageCoorg.y + (direction / 25) <= clientRect.bottom - BITMAP_SIZE) ? imageCoorg.y += (direction / 25) : imageCoorg.y -= (direction / 25);
+	}
+}
 
 LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
@@ -139,6 +150,12 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 		GetClientRect(hWnd, &clientFrame);
 		FreeBackground();
 		InitializeBackground(hWnd, clientFrame.right - clientFrame.left, clientFrame.bottom - clientFrame.top);
+		InvalidateRect(hWnd, NULL, FALSE);
+		break;
+	}
+	case WM_MOUSEWHEEL:
+	{
+		MoveImage(wParam);
 		InvalidateRect(hWnd, NULL, FALSE);
 		break;
 	}
